@@ -33,6 +33,8 @@ Thumbs.db
 # Temporary documentation
 xtemp/
 
+scripts/__pycache__/
+
 # Logs
 *.log
 
