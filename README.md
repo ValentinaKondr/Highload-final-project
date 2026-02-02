@@ -1,32 +1,62 @@
-# High-Load Service with AI-Optimization
+## Высоконагруженный Go-сервис с аналитикой и авто-масштабированием
 
-Высоконагруженный сервис на Go с аналитикой и развертыванием в Kubernetes.
+Проект представляет собой высоконагруженный HTTP-сервис на Go для обработки
+потоковых метрик (например, RPS и CPU), с простой статистической аналитикой
+и детекцией аномалий.
 
-## Архитектура
+Сервис развёртывается в Kubernetes и поддерживает горизонтальное
+масштабирование (HPA) и мониторинг с помощью Prometheus и Grafana.
 
-Сервис обрабатывает потоковые метрики от IoT-устройств, выполняет аналитику в реальном времени и детектирует аномалии.
+---
 
-### Компоненты
+## Используемый стек
 
-- **Go Service**: HTTP-сервис на Go для приема метрик
-- **Redis**: Кэширование метрик
-- **Analytics**: Rolling average и z-score детекция аномалий
-- **Prometheus**: Мониторинг метрик
-- **Kubernetes**: Оркестрация с HPA для авто-масштабирования
+- **Go 1.22+**
+- **Redis** — кэширование метрик
+- **Docker**
+- **Kubernetes (Minikube / Kind)**
+- **Prometheus + Grafana**
+- **Apache Bench и пользовательские скрипты нагрузки**
 
-## Требования
+---
 
+## Архитектура решения
+
+- HTTP API для приёма и анализа метрик
+- Аналитика нагрузки:
+  - Rolling Average (скользящее среднее, окно 50 значений)
+  - Детекция аномалий по z-score (порог 2.0)
+- Redis используется как лёгкое хранилище
+- Авто-масштабирование подов на основе загрузки CPU (HPA)
+- Экспорт метрик для Prometheus
+
+---
+
+## HTTP API
+
+| Endpoint | Метод | Описание |
+|--------|-------|----------|
+| `/health` | GET | Проверка работоспособности |
+| `/metrics` | POST | Приём метрик (JSON) |
+| `/analyze` | GET | Текущая аналитика и состояние детектора |
+| `/metrics` | GET | Метрики Prometheus |
+
+### Пример запроса `/metrics`
+
+```json
+{
+  "timestamp": 1234567890,
+  "cpu": 42.5,
+  "rps": 1200
+}
+
+## Локальный запуск
+### Требования
 - Go 1.22+
-- Docker
-- Kubernetes (Minikube/Kind) или доступ к облачному кластеру
-- kubectl
+- Redis (локально или через Docker)
 
-## Быстрый старт
-
-### 1. Локальная разработка
 
 ```bash
-# Установка зависимостей
 go mod download
 
 # Запуск Redis локально
@@ -37,23 +67,67 @@ export REDIS_ADDR=localhost:6379
 export REDIS_PASSWORD=""
 go run cmd/service/main.go
 ```
+---
+```bash
+# проверка
+curl http://localhost:8081/health
+curl http://localhost:8081/analyze
+```
+## Тестирование
+В проекте реализованы юнит- и интеграционные тесты.
+### Запуск тестов
+```bash
+go test ./... -v
+```
+### Запуск с детектором гонок
+```bash
+go test ./... -v
+```
+Тестами покрыты:
+- скользящее среднее
+- детекция аномалий (z-score)
+- HTTP-эндпоинты (с in-memory кэшем без Redis)
 
-### 2. Развертывание в Kubernetes
+## Нагрузочное тестирование
+### Скрипт нагрузки с аномалиями
+```bash
+./scripts/load_anomaly_test.sh
+```
+Скрипт выполняет прогрев окна аналитики, генерацию аномальных значений, запрос /analyze для фиксации результата
 
-#### Подготовка Minikube
 
 ```bash
-# Запуск Minikube
+# Установка Locust
+pip3 install locust
+
+# Запуск теста (1000 RPS, 5 минут)
+./scripts/load-test.sh http://localhost:8080 1000 300
+
+# Или через kubectl port-forward
+kubectl port-forward service/go-service 8080:80 &
+./scripts/load-test.sh http://localhost:8080 1000 300
+
+
+### Apache Bench 
+```bash 
+ab -n 100000 -c 200 \
+  -p payload.json \
+  -T application/json \
+  http://localhost:8081/metrics
+```
+
+## Развертывание в Kubernetes
+
+### Подготовка Minikube
+```bash
 minikube start --cpus=2 --memory=4g
 
-# Включение метрик сервера для HPA
 minikube addons enable metrics-server
 ```
 
 #### Сборка и загрузка образа
 
 ```bash
-# Сборка Docker образа
 ./scripts/build.sh
 
 # Загрузка в Minikube
@@ -114,66 +188,3 @@ kubectl port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090
 kubectl port-forward svc/prometheus-grafana 3000:80
 # Логин: admin, пароль: prom-operator
 ```
-
-## Нагрузочное тестирование
-
-```bash
-# Установка Locust
-pip3 install locust
-
-# Запуск теста (1000 RPS, 5 минут)
-./scripts/load-test.sh http://localhost:8080 1000 300
-
-# Или через kubectl port-forward
-kubectl port-forward service/go-service 8080:80 &
-./scripts/load-test.sh http://localhost:8080 1000 300
-```
-
-## Структура проекта
-
-```
-.
-├── cmd/
-│   └── service/          # Основной сервис
-├── internal/
-│   ├── analytics/        # Rolling average и anomaly detection
-│   ├── cache/           # Redis клиент
-│   └── metrics/         # Prometheus метрики
-├── k8s/                 # Kubernetes манифесты
-│   ├── deployments/
-│   ├── services/
-│   ├── configmaps/
-│   ├── hpa/
-│   └── ingress/
-├── scripts/             # Скрипты развертывания
-└── xtemp/              # Временная документация (gitignored)
-```
-
-## Аналитика
-
-### Rolling Average
-- Окно: 50 событий
-- Используется для сглаживания нагрузки и прогнозирования
-
-### Anomaly Detection
-- Метод: Z-score
-- Threshold: 2σ (стандартных отклонения)
-- Окно: 50 событий
-
-## Масштабирование
-
-HPA настроен на:
-- Минимум реплик: 2
-- Максимум реплик: 5
-- Целевая загрузка CPU: 70%
-
-## Производительность
-
-- Целевая нагрузка: 1000+ RPS
-- Latency: < 50ms (p95)
-- Точность детекции аномалий: > 70%
-
-## Лицензия
-
-MIT
-
