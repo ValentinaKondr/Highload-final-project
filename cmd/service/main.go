@@ -17,6 +17,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+const (
+	ServiceVersion       = "v1.0.0"
+	RPSUpdateIntervalSec = 1.0
+	RedisTTL             = 5 * time.Minute
+)
+
 func getenvInt(name string, def int) int {
 	v := os.Getenv(name)
 	if v == "" {
@@ -102,7 +108,7 @@ func (s *Service) handleMetrics(w http.ResponseWriter, r *http.Request) {
 
 	// Store in Redis cache
 	cacheKey := fmt.Sprintf("metric:%d", metric.Timestamp)
-	if err := s.cache.Set(cacheKey, metric, 5*time.Minute); err != nil {
+	if err := s.cache.Set(cacheKey, metric, RedisTTL); err != nil {
 		log.Printf("Failed to cache metric: %v", err)
 	}
 
@@ -130,7 +136,7 @@ func (s *Service) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	// Update RPS counter
 	s.rpsCounter++
 	elapsed := now.Sub(s.lastRPSUpdate).Seconds()
-	if elapsed >= 1.0 {
+	if elapsed >= RPSUpdateIntervalSec {
 		currentRPS := float64(s.rpsCounter) / elapsed
 		metrics.RPSRate.Set(currentRPS)
 		s.rpsCounter = 0
@@ -139,7 +145,7 @@ func (s *Service) handleMetrics(w http.ResponseWriter, r *http.Request) {
 
 	// Update anomaly rate per minute
 	anomalyElapsed := now.Sub(s.lastAnomalyUpdate).Minutes()
-	if anomalyElapsed >= 1.0 {
+	if anomalyElapsed >= RPSUpdateIntervalSec {
 		anomalyRate := float64(s.anomalyCounter) / anomalyElapsed
 		metrics.AnomalyRate.Set(anomalyRate)
 		s.anomalyCounter = 0
@@ -185,7 +191,8 @@ func (s *Service) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 func (s *Service) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
-		"status": "healthy",
+		"status":  "ok",
+		"version": ServiceVersion,
 	})
 	metrics.RequestTotal.WithLabelValues(r.Method, "/health", "200").Inc()
 }

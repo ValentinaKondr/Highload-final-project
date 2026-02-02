@@ -120,7 +120,7 @@ ab -n 100000 -c 200 \
 
 ### Подготовка Minikube
 ```bash
-minikube start --cpus=4 --memory=6g
+minikube start --cpus=2 --memory=4g
 
 minikube addons enable metrics-server
 ```
@@ -184,7 +184,7 @@ kubectl port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090
 ### Grafana
 
 ```bash
-# Доступ к Grafana (после установки через Helm выше)
+# Доступ к Grafana (после установки через Helm)
 kubectl port-forward svc/prometheus-grafana 3000:80
-# Логин: admin, пароль: prom-operator
+# Логин: admin, пароль: pwd1234
 ```
