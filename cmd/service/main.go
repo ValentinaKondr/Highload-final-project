@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -15,10 +16,29 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const (
-	windowSize       = 50
-	anomalyThreshold = 2.0
-)
+func getenvInt(name string, def int) int {
+	v := os.Getenv(name)
+	if v == "" {
+		return def
+	}
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		return def
+	}
+	return i
+}
+
+func getenvFloat(name string, def float64) float64 {
+	v := os.Getenv(name)
+	if v == "" {
+		return def
+	}
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return def
+	}
+	return f
+}
 
 type Metric struct {
 	Timestamp int64   `json:"timestamp"`
@@ -37,6 +57,10 @@ type Service struct {
 }
 
 func NewService() (*Service, error) {
+	windowSize := getenvInt("WINDOW_SIZE", 50)
+	anomalyThreshold := getenvFloat("ANOMALY_THRESHOLD", 2.0)
+	redisDB := getenvInt("REDIS_DB", 0)
+
 	redisAddr := os.Getenv("REDIS_ADDR")
 	if redisAddr == "" {
 		redisAddr = "redis:6379"
@@ -47,7 +71,7 @@ func NewService() (*Service, error) {
 		redisPassword = ""
 	}
 
-	redisCache, err := cache.NewRedisCache(redisAddr, redisPassword, 0)
+	redisCache, err := cache.NewRedisCache(redisAddr, redisPassword, redisDB)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize Redis: %w", err)
 	}
@@ -135,7 +159,7 @@ func (s *Service) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		"anomaly_stats": map[string]interface{}{
 			"mean":        mean,
 			"std_dev":     stdDev,
-			"threshold":   anomalyThreshold,
+			"threshold":   getenvFloat("ANOMALY_THRESHOLD", 2.0),
 			"window_size": count,
 		},
 		"timestamp": time.Now().Unix(),

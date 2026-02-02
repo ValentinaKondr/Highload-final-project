@@ -31,6 +31,21 @@ spec:
             secretKeyRef:
               name: redis-secret
               key: password
+        - name: WINDOW_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: window_size
+        - name: ANOMALY_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: anomaly_threshold
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: redis_db
         resources:
           requests:
             cpu: 100m
