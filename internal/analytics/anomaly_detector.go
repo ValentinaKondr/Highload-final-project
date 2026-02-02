@@ -83,3 +83,14 @@ func (ad *AnomalyDetector) Reset() {
 	ad.values = make([]float64, 0, ad.windowSize)
 }
 
+func (a *AnomalyDetector) GetWindowSize() int {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.windowSize
+}
+
+func (a *AnomalyDetector) GetThreshold() float64 {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.threshold
+}

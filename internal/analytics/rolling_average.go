@@ -59,4 +59,3 @@ func (ra *RollingAverage) Reset() {
 	defer ra.mu.Unlock()
 	ra.values = make([]float64, 0, ra.windowSize)
 }
-

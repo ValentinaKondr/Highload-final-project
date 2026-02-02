@@ -159,8 +159,9 @@ func (s *Service) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		"anomaly_stats": map[string]interface{}{
 			"mean":        mean,
 			"std_dev":     stdDev,
-			"threshold":   getenvFloat("ANOMALY_THRESHOLD", 2.0),
-			"window_size": count,
+			"threshold":   s.anomalyDetector.GetThreshold(),
+			"window_size": s.anomalyDetector.GetWindowSize(),
+			"data_points": count,
 		},
 		"timestamp": time.Now().Unix(),
 	}
