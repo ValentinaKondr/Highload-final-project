@@ -10,13 +10,13 @@ data:
       evaluation_interval: 15s
     
     scrape_configs:
-      - job_name: 'go-service'
+      - job_name: 'metrics-analyzer'
         kubernetes_sd_configs:
           - role: pod
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_label_app]
             action: keep
-            regex: go-service
+            regex: metrics-analyzer
           - source_labels: [__meta_kubernetes_pod_ip]
             action: replace
             target_label: __address__

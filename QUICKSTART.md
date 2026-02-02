@@ -31,7 +31,7 @@ kind create cluster --config kind-config.yaml
 
 # Для Minikube загрузите образ в локальный реестр:
 eval $(minikube docker-env)
-docker build -t go-service:latest .
+docker build -t metrics-analyzer:latest .
 ```
 
 ### 3. Развертывание
@@ -54,7 +54,7 @@ kubectl get pods,svc,hpa
 
 ```bash
 # Port-forward
-kubectl port-forward service/go-service 8080:80
+kubectl port-forward service/metrics-analyzer 8080:80
 
 # Тестирование
 curl http://localhost:8080/health
@@ -79,7 +79,7 @@ kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
 pip3 install locust
 
 # Запуск теста
-kubectl port-forward service/go-service 8080:80 &
+kubectl port-forward service/metrics-analyzer 8080:80 &
 ./scripts/load-test.sh http://localhost:8080 1000 300
 ```
 
@@ -131,7 +131,7 @@ watch kubectl get hpa,pods
 # Генерация нагрузки для тестирования масштабирования
 for i in {1..5}; do
   kubectl run load-gen-$i --image=busybox --rm -it --restart=Never -- \
-    sh -c "while true; do wget -q -O- http://go-service/metrics; done" &
+    sh -c "while true; do wget -q -O- http://metrics-analyzer/metrics; done" &
 done
 ```
 
@@ -145,7 +145,7 @@ minikube stop
 ## Дополнительная документация
 
 - Полное руководство: `README.md`
-- Развертывание: `xtemp/DEPLOYMENT_GUIDE.md`
-- Тестирование: `xtemp/TESTING_GUIDE.md`
-- Отчет: `xtemp/PROJECT_REPORT_TEMPLATE.md`
+- Развертывание: `tmp/DEPLOYMENT_GUIDE.md`
+- Тестирование: `tmp/TESTING_GUIDE.md`
+- Отчет: `tmp/PROJECT_REPORT_TEMPLATE.md`
 

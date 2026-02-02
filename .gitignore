@@ -31,7 +31,7 @@ go.work
 Thumbs.db
 
 # Temporary documentation
-xtemp/
+tmp/
 
 scripts/__pycache__/
 

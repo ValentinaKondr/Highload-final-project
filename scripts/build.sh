@@ -4,8 +4,8 @@ set -e
 
 echo "Building Go service Docker image..."
 
-docker build -t go-service:latest .
+docker build -t metrics-analyzer:latest .
 
 echo "Docker image built successfully!"
-echo "To load into Minikube, run: minikube image load go-service:latest"
+echo "To load into Minikube, run: minikube image load metrics-analyzer:latest"
 

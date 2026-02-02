@@ -11,7 +11,7 @@
 ## Структура директорий
 
 ```
-Ршпрдщфв-final-project/
+Highload-final-project/
 ├── cmd/
 │   └── service/
 │       ├── main.go
@@ -33,11 +33,11 @@
 │
 ├── k8s/
 │   ├── deployments/
-│   │   ├── go-service-deployment.yaml
+│   │   ├── metrics-analyzer-deployment.yaml
 │   │   └── redis-deployment.yaml
 │   │
 │   ├── services/
-│   │   ├── go-service-service.yaml
+│   │   ├── metrics-analyzer-service.yaml
 │   │   └── redis-service.yaml
 │   │
 │   ├── configmaps/
@@ -45,10 +45,10 @@
 │   │   └── redis-secret.yaml
 │   │
 │   ├── hpa/
-│   │   └── go-service-hpa.yaml
+│   │   └── metrics-analyzer-hpa.yaml
 │   │
 │   ├── ingress/
-│   │   └── go-service-ingress.yaml
+│   │   └── metrics-analyzer-ingress.yaml
 │   │
 │   └── monitoring/
 │       ├── prometheus-config.yaml
@@ -62,12 +62,6 @@
 │   ├── test-ab.sh
 │   ├── load_anomaly_test.sh
 │   └── locustfile.py
-│
-├── xtemp/
-│   ├── DEPLOYMENT_GUIDE.md
-│   ├── TESTING_GUIDE.md
-│   ├── GRAFANA_DASHBOARDS.md
-│   └── PROJECT_REPORT_TEMPLATE.md
 │
 ├── .gitignore
 ├── .dockerignore

@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: go-service
+  name: metrics-analyzer
   labels:
-    app: go-service
+    app: metrics-analyzer
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: go-service
+      app: metrics-analyzer
   template:
     metadata:
       labels:
-        app: go-service
+        app: metrics-analyzer
     spec:
       containers:
-      - name: go-service
-        image: go-service:latest
+      - name: metrics-analyzer
+        image: metrics-analyzer:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

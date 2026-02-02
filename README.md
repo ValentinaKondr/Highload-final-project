@@ -104,7 +104,7 @@ pip3 install locust
 ./scripts/load-test.sh http://localhost:8080 1000 300
 
 # Или через kubectl port-forward
-kubectl port-forward service/go-service 8080:80 &
+kubectl port-forward service/metrics-analyzer 8080:80 &
 ./scripts/load-test.sh http://localhost:8080 1000 300
 
 
@@ -131,7 +131,7 @@ minikube addons enable metrics-server
 ./scripts/build.sh
 
 # Загрузка в Minikube
-minikube image load go-service:latest
+minikube image load metrics-analyzer:latest
 ```
 
 #### Развертывание
@@ -148,7 +148,7 @@ kubectl get pods,svc,hpa
 
 ```bash
 # Port-forward для доступа
-kubectl port-forward service/go-service 8080:80
+kubectl port-forward service/metrics-analyzer 8080:80
 
 # Тестирование
 curl http://localhost:8080/health

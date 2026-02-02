@@ -1,14 +1,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: go-service
+  name: metrics-analyzer
   namespace: monitoring
   labels:
-    app: go-service
+    app: metrics-analyzer
 spec:
   selector:
     matchLabels:
-      app: go-service
+      app: metrics-analyzer
   namespaceSelector:
     matchNames:
     - default

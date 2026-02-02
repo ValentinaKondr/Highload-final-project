@@ -12,14 +12,14 @@ kubectl apply -f k8s/deployments/redis-deployment.yaml
 kubectl apply -f k8s/services/redis-service.yaml
 
 echo "[3/7] Go service"
-kubectl apply -f k8s/deployments/go-service-deployment.yaml
-kubectl apply -f k8s/services/go-service-service.yaml
+kubectl apply -f k8s/deployments/metrics-analyzer-deployment.yaml
+kubectl apply -f k8s/services/metrics-analyzer-service.yaml
 
 echo "[4/7] HPA"
-kubectl apply -f k8s/hpa/go-service-hpa.yaml
+kubectl apply -f k8s/hpa/metrics-analyzer-hpa.yaml
 
 echo "[5/7] Ingress"
-kubectl apply -f k8s/ingress/go-service-ingress.yaml || echo "Ingress skipped"
+kubectl apply -f k8s/ingress/metrics-analyzer-ingress.yaml || echo "Ingress skipped"
 
 echo "[6/7] Monitoring config"
 kubectl apply -f k8s/monitoring/prometheus-config.yaml || echo "Prometheus config skipped"

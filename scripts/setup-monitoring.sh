@@ -22,7 +22,7 @@ echo "Installing Prometheus and Grafana..."
 helm install prometheus prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
-  --set grafana.adminPassword=admin123
+  --set grafana.adminPassword=pwd1234
 
 # Wait for pods to be ready
 echo "Waiting for monitoring stack to be ready..."
@@ -39,5 +39,5 @@ echo "  kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-promet
 echo ""
 echo "Access Grafana:"
 echo "  kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80"
-echo "  Login: admin / admin123"
+echo "  Login: admin / pwd1234"
 
