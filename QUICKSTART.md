@@ -7,7 +7,7 @@
 - Kubernetes (Minikube или Kind)
 - kubectl
 
-## Шаги развертывания
+## Развертывание
 
 ### 1. Запуск Kubernetes кластера
 
@@ -18,7 +18,7 @@ minikube addons enable metrics-server
 minikube addons enable ingress
 ```
 
-**Kind:**
+**Kind (опционально):**
 ```bash
 kind create cluster --config kind-config.yaml
 ```
@@ -29,7 +29,7 @@ kind create cluster --config kind-config.yaml
 # Сборка образа
 ./scripts/build.sh
 
-# Для Minikube
+# Для Minikube загрузите образ в локальный реестр:
 eval $(minikube docker-env)
 docker build -t go-service:latest .
 ```
@@ -43,6 +43,12 @@ docker build -t go-service:latest .
 # Проверка статуса
 kubectl get pods,svc,hpa
 ```
+#### Будут развернуты:
+
+- Go-сервис
+- Redis
+- ConfigMap и Secret
+- Horizontal Pod Autoscaler (HPA)
 
 ### 4. Доступ к сервису
 
@@ -60,10 +66,8 @@ curl http://localhost:8080/health
 # Установка Prometheus и Grafana
 ./scripts/setup-monitoring.sh
 
-# Доступ к Prometheus
+# Доступ к интерфейсам
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
-
-# Доступ к Grafana
 kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
 # Логин: admin / admin123
 ```
@@ -79,6 +83,21 @@ kubectl port-forward service/go-service 8080:80 &
 ./scripts/load-test.sh http://localhost:8080 1000 300
 ```
 
+Еще один скрипт нагрузки
+```bash
+./scripts/load_anomaly_test.sh http://localhost:8080
+```
+Apache Bench (для тестирования HPA)
+```bash
+ab -n 100000 -c 200 \
+  -p payload.json \
+  -T application/json \
+  http://localhost:8080/metrics
+````
+мониторинг масштабирования
+```bash
+watch kubectl get hpa,pods
+```
 ## Проверка работы
 
 ### Health Check
@@ -119,17 +138,7 @@ done
 ## Очистка
 
 ```bash
-# Удаление всех ресурсов
-kubectl delete -f k8s/ingress/go-service-ingress.yaml
-kubectl delete -f k8s/hpa/go-service-hpa.yaml
-kubectl delete -f k8s/deployments/go-service-deployment.yaml
-kubectl delete -f k8s/services/go-service-service.yaml
-kubectl delete -f k8s/deployments/redis-deployment.yaml
-kubectl delete -f k8s/services/redis-service.yaml
-kubectl delete -f k8s/configmaps/redis-secret.yaml
-kubectl delete -f k8s/configmaps/app-config.yaml
-
-# Остановка Minikube
+kubectl delete -f k8s/
 minikube stop
 ```
 
