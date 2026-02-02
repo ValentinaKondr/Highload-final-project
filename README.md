@@ -120,7 +120,7 @@ ab -n 100000 -c 200 \
 
 ### Подготовка Minikube
 ```bash
-minikube start --cpus=2 --memory=4g
+minikube start --cpus=4 --memory=6g
 
 minikube addons enable metrics-server
 ```
