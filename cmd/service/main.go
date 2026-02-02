@@ -48,7 +48,7 @@ type Metric struct {
 }
 
 type Service struct {
-	cache             *cache.RedisCache
+	cache             cache.Cache
 	rollingAvg        *analytics.RollingAverage
 	anomalyDetector   *analytics.AnomalyDetector
 	rpsCounter        int64
