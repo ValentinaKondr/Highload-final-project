@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -54,6 +55,7 @@ type Service struct {
 	anomalyCounter    int64
 	lastRPSUpdate     time.Time
 	lastAnomalyUpdate time.Time
+	statsMu           sync.Mutex
 }
 
 func NewService() (*Service, error) {
@@ -120,9 +122,13 @@ func (s *Service) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Anomaly detected: RPS=%.2f, Timestamp=%d", metric.RPS, metric.Timestamp)
 	}
 
+	now := time.Now()
+
+	s.statsMu.Lock()
+	defer s.statsMu.Unlock()
+
 	// Update RPS counter
 	s.rpsCounter++
-	now := time.Now()
 	elapsed := now.Sub(s.lastRPSUpdate).Seconds()
 	if elapsed >= 1.0 {
 		currentRPS := float64(s.rpsCounter) / elapsed
@@ -140,7 +146,9 @@ func (s *Service) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		s.lastAnomalyUpdate = now
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":          "ok",
 		"rolling_average": avg,
@@ -152,18 +160,20 @@ func (s *Service) handleMetrics(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	avg := s.rollingAvg.GetAverage()
-	mean, stdDev, count := s.anomalyDetector.GetStats()
+	mean, std, count := s.anomalyDetector.GetStats()
+	z, isAnomaly := s.anomalyDetector.GetLastDecision()
 
 	response := map[string]interface{}{
 		"rolling_average": avg,
 		"anomaly_stats": map[string]interface{}{
 			"mean":        mean,
-			"std_dev":     stdDev,
+			"std_dev":     std,
 			"threshold":   s.anomalyDetector.GetThreshold(),
 			"window_size": s.anomalyDetector.GetWindowSize(),
 			"data_points": count,
+			"last_zscore": z,
+			"is_anomaly":  isAnomaly,
 		},
-		"timestamp": time.Now().Unix(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

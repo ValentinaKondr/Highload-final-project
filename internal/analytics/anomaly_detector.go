@@ -10,11 +10,22 @@ type AnomalyDetector struct {
 	windowSize int
 	values     []float64
 	threshold  float64 // z-score threshold (default 2.0)
-	mu         sync.RWMutex
+
+	lastZ         float64
+	lastIsAnomaly bool
+
+	mu sync.RWMutex
 }
 
 // NewAnomalyDetector creates a new AnomalyDetector
 func NewAnomalyDetector(windowSize int, threshold float64) *AnomalyDetector {
+	if windowSize < 1 {
+		windowSize = 50
+	}
+	if threshold <= 0 {
+		threshold = 2.0
+	}
+
 	return &AnomalyDetector{
 		windowSize: windowSize,
 		values:     make([]float64, 0, windowSize),
@@ -22,26 +33,56 @@ func NewAnomalyDetector(windowSize int, threshold float64) *AnomalyDetector {
 	}
 }
 
+func meanStd(values []float64) (mean, std float64) {
+	n := float64(len(values))
+	if n == 0 {
+		return 0, 0
+	}
+
+	for _, v := range values {
+		mean += v
+	}
+	mean /= n
+
+	for _, v := range values {
+		diff := v - mean
+		std += diff * diff
+	}
+	std = math.Sqrt(std / n)
+
+	return
+}
+
 // Add adds a new value and returns if it's an anomaly
-func (ad *AnomalyDetector) Add(value float64) bool {
-	ad.mu.Lock()
-	defer ad.mu.Unlock()
+func (a *AnomalyDetector) Add(value float64) bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
-	isAnomaly := false
-	if len(ad.values) >= ad.windowSize {
-		mean, stdDev := ad.calculateStats()
-		if stdDev > 0 {
-			zScore := math.Abs((value - mean) / stdDev)
-			isAnomaly = zScore > ad.threshold
-		}
+	// добавляем значение
+	a.values = append(a.values, value)
+	if len(a.values) > a.windowSize {
+		a.values = a.values[1:]
 	}
 
-	ad.values = append(ad.values, value)
-	if len(ad.values) > ad.windowSize {
-		ad.values = ad.values[1:]
+	// если данных мало — аномалии не считаем
+	if len(a.values) < 2 {
+		a.lastZ = 0
+		a.lastIsAnomaly = false
+		return false
 	}
 
-	return isAnomaly
+	mean, std := meanStd(a.values)
+	if std == 0 {
+		a.lastZ = 0
+		a.lastIsAnomaly = false
+		return false
+	}
+
+	z := (value - mean) / std
+	a.lastZ = z
+	a.lastIsAnomaly = math.Abs(z) > a.threshold
+
+	return a.lastIsAnomaly
 }
 
 // calculateStats calculates mean and standard deviation
@@ -69,11 +110,17 @@ func (ad *AnomalyDetector) calculateStats() (mean, stdDev float64) {
 }
 
 // GetStats returns current statistics
-func (ad *AnomalyDetector) GetStats() (mean, stdDev float64, count int) {
-	ad.mu.RLock()
-	defer ad.mu.RUnlock()
-	mean, stdDev = ad.calculateStats()
-	return mean, stdDev, len(ad.values)
+func (a *AnomalyDetector) GetStats() (mean, std float64, count int) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	count = len(a.values)
+	if count == 0 {
+		return 0, 0, 0
+	}
+
+	mean, std = meanStd(a.values)
+	return
 }
 
 // Reset clears all values
@@ -93,4 +140,10 @@ func (a *AnomalyDetector) GetThreshold() float64 {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.threshold
+}
+
+func (a *AnomalyDetector) GetLastDecision() (z float64, isAnomaly bool) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.lastZ, a.lastIsAnomaly
 }
