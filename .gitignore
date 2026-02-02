@@ -1,0 +1,49 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary documentation
+xtemp/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# Kubernetes secrets
+*.secret.yaml
+
+# Build artifacts
+*.tar.gz
+*.zip
+

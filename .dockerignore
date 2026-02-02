@@ -1,0 +1,9 @@
+.git
+.gitignore
+*.md
+xtemp/
+k8s/
+scripts/
+*.log
+.DS_Store
+
