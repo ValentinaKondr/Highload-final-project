@@ -230,3 +230,13 @@ func main() {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
+
+func NewTestService() *Service {
+	return &Service{
+		rollingAvg:        analytics.NewRollingAverage(50),
+		anomalyDetector:   analytics.NewAnomalyDetector(50, 2.0),
+		cache:             newTestCache(),
+		lastRPSUpdate:     time.Now(),
+		lastAnomalyUpdate: time.Now(),
+	}
+}
